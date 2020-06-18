@@ -1,0 +1,7 @@
+package GraphQL
+
+object Subscriptions {
+
+
+
+}

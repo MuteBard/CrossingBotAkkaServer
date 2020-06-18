@@ -1,0 +1,5 @@
+package GraphQL
+
+object Connections {
+
+}
