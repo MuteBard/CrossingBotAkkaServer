@@ -1,8 +1,10 @@
 # Crossing Bot Akka Server (CBAS)
 
+![](https://cdn.discordapp.com/attachments/685583064885100568/719665723986804793/crossingbotv1.png)
+
 ## Akka Actors
 
-Consists of 5 Akka actors that drive the functionality of the server by facilating communication bectween the MongoDB based 
+Consists of 5 Akka actors that drive the functionality of the server by facilitating communication between the MongoDB based
 data access objects and the Controller:
 
 - StartActor
@@ -38,7 +40,7 @@ Also manages a series of Create, Read, Update and genuine Delete operations rega
 This actor calls a method that generates weighted random "stalk" (stock) values for the 24 hours. Each 24 hour interval contains what call an "HourBlock". An hourblock contains four of what is called a "QuarterBlock"
 
 QuarterBlocks can have one of 7 states:
-  
+
 - Heavenly
 - Awesome
 - Good
