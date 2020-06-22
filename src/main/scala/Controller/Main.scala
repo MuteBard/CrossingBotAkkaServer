@@ -33,11 +33,7 @@ object Main extends App with AkkaHttpCirceAdapter {
 		}
 
 	val bindingFuture = Http().bindAndHandle(route, host, port)
-	println(s"Server online at port $port")
-//	StdIn.readLine()
-//	bindingFuture
-//		.flatMap(_.unbind())
-//		.onComplete(_ => system.terminate())
+	println(s"Server online at host:$host port:$port")
 }
 
 //Thanks to ghostdogpr for Caliban
