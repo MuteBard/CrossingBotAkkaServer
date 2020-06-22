@@ -53,11 +53,11 @@ class MarketActor extends Actor with ActorLogging {
 			//log.info(s"[Create_New_Movement_Record] Checking for difference in block ids ($newHourBlockId,$newQuarterBlockId)")
 			val twoMRs = MarketOperations.readLastNDaysMovementRecords(2)
 			val suspectTodayMarket = twoMRs(0)
-
+			val isThirdMrOrMore = twoMRs.length > 2
 			val mr =
 				if (suspectTodayMarket.id == todayDateId()) { //if this movement record is within today
 					suspectTodayMarket
-				} else if (suspectTodayMarket.id == "") { //if this is the very first movement record
+				} else if (twoMRs(0).id == "") { //if this is the very first movement record
 					MovementRecord()
 				} else { //if this is a new day and a previous movement record has a different date Id
 					MovementRecord(
@@ -75,19 +75,24 @@ class MarketActor extends Actor with ActorLogging {
 				if (dateMarketCreated != todayDateId()) {
 					log.info(s"[Create_New_Movement_Record] A new day has been detected ($newHourBlockId,$newQuarterBlockId)")
 					log.info(s"[Create_New_Movement_Record] Generating all block patterns for the day")
-					val yesterdayMarket = suspectTodayMarket
-					val dayBeforeMarket = twoMRs(1)
 
-					val margin = yesterdayMarket.stalksPurchased * .25
+					todayMarket =
+						if(isThirdMrOrMore) {
+							val yesterdayMarket = suspectTodayMarket
+							val dayBeforeMarket = twoMRs(1)
+							val margin = yesterdayMarket.stalksPurchased * .25
+							// if the market grew more than 25% of its size yesterday, then it is a good day otherwise a bad day
+							if (yesterdayMarket.stalksPurchased - dayBeforeMarket.stalksPurchased > margin) {
+								log.info(s"[Create_New_Movement_Record] Generating relatively good day")
+								Day().generate("good")
+							} else {
+								log.info(s"[Create_New_Movement_Record] Generating relatively bad day")
+								Day().generate("bad")
+							}
+						}else{
+							Day().generate("good")
+						}
 
-					// if the market grew more than 25% of its size yesterday, then it is a good day otherwise a bad day
-					todayMarket = if(yesterdayMarket.stalksPurchased - dayBeforeMarket.stalksPurchased > margin){
-						log.info(s"[Create_New_Movement_Record] Generating relatively good day")
-						Day().generate("good")
-					}else{
-						log.info(s"[Create_New_Movement_Record] Generating relatively bad day")
-						Day().generate("bad")
-					}
 					dateMarketCreated = todayDateId()
 					log.info(s"[Create_New_Movement_Record] Today's Market: $todayMarket")
 				}
