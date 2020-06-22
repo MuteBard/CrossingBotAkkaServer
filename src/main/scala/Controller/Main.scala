@@ -19,6 +19,8 @@ object Main extends App with AkkaHttpCirceAdapter {
 	implicit val runtime: Runtime[ZEnv] = Runtime.default
 	val api = graphQL(RootResolver(allQueries, allMutations))
 	val interpreter = runtime.unsafeRun(api.interpreter)
+	val port = sys.env.getOrElse("PORT", "5000").toInt
+	val host = if (port == 5000) "localhost" else "0.0.0.0"
 
 	val route =
 		cors(){
@@ -29,7 +31,7 @@ object Main extends App with AkkaHttpCirceAdapter {
 			}
 		}
 
-	val bindingFuture = Http().bindAndHandle(route, "localhost", 5000)
+	val bindingFuture = Http().bindAndHandle(route, host, port)
 	println(s"Server online at http://localhost:5000/graphiql\nPress RETURN to stop...")
 	StdIn.readLine()
 	bindingFuture

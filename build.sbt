@@ -4,6 +4,9 @@ version := "0.1"
 
 scalaVersion := "2.13.1"
 
+enablePlugins(JavaAppPackaging)
+mainClass in Compile := Some("Controller.Main")
+
 val akkaVersion = "2.6.1"
 val akkaHttpVersion = "10.1.11"
 val scalaTestVersion = "3.1.0"
@@ -30,7 +33,5 @@ libraryDependencies ++= Seq(
   "com.github.ghostdogpr" %% "caliban" % "0.7.5",
   "com.github.ghostdogpr" %% "caliban-akka-http" % "0.7.5",
   "de.heikoseeberger"     %% "akka-http-circe" % "1.31.0"
-
-
 
 )

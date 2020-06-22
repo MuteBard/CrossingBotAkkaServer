@@ -1,5 +1,6 @@
 package Actors
 
+import GraphQL.Service._
 import akka.actor.{ActorRef, ActorSystem, Props}
 
 object Initializer{
@@ -9,4 +10,6 @@ object Initializer{
 	val userActor: ActorRef = system.actorOf(Props[UserActor], "UserActor")
 	val marketActor: ActorRef = system.actorOf(Props[MarketActor], "MarketActor")
 	val startActor: ActorRef = system.actorOf(Props[StartActor], "StartActor")
+	val cbs = new CBS()
+	cbs.toggleMarket(true)
 }
