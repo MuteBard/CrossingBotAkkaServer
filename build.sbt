@@ -27,6 +27,7 @@ libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-stream" % akkaVersion,
   //Akka http
   "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-actor-typed" % akkaVersion,
 
   //GraphQL
   "dev.zio" %% "zio" % "1.0.0-RC18-2",

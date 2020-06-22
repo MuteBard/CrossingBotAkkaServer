@@ -20,6 +20,7 @@ object Main extends App with AkkaHttpCirceAdapter {
 	val api = graphQL(RootResolver(allQueries, allMutations))
 	val interpreter = runtime.unsafeRun(api.interpreter)
 	val port = sys.env.getOrElse("PORT", "5000").toInt
+	println(port)
 	val host = if (port == 5000) "localhost" else "0.0.0.0"
 
 	val route =
