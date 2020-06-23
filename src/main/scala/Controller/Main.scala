@@ -20,9 +20,7 @@ object Main extends App with AkkaHttpCirceAdapter {
 	val api = graphQL(RootResolver(allQueries, allMutations))
 	val interpreter = runtime.unsafeRun(api.interpreter)
 	val port = sys.env.getOrElse("PORT", "5000").toInt
-	println(port)
 	val host = if (port == 5000) "localhost" else "0.0.0.0"
-
 	val route =
 		cors(){
 			path("api" / "graphql") {
@@ -33,7 +31,7 @@ object Main extends App with AkkaHttpCirceAdapter {
 		}
 
 	val bindingFuture = Http().bindAndHandle(route, host, port)
-	println(s"Server online at route:$route host:$host port:$port")
+	println(s"Server online at host:$host port:$port")
 }
 
 //Thanks to ghostdogpr for Caliban

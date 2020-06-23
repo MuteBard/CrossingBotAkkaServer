@@ -86,7 +86,7 @@ object UserOperations extends MongoDBOperations {
 
 
 	def signInUser(username : String, encryptedPw : String) : Boolean = {
-		val source = MongoSource(allUsers.find(classOf[User])).filter(user => user.username == username && user.encryptedPw == user.encryptedPw)
+		val source = MongoSource(allUsers.find(classOf[User])).filter(user => user.username == username && user.encryptedPw == encryptedPw)
 		val userSeqFuture = source.runWith(Sink.seq)
 		val userSeq : Seq[User] = Await.result(userSeqFuture, chill seconds)
 		userSeq.length == 1
