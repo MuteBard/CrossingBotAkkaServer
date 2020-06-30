@@ -57,7 +57,7 @@ class MarketActor extends Actor with ActorLogging {
 				if (suspectTodayMarket.id == todayDateId()) { //if this movement record is within today
 					suspectTodayMarket
 				} else if (twoMRs(0).orderNum == 0) { //if this is the very first movement record
-					twoMRs(0)
+					MovementRecord()
 				} else { //if this is a new day and a previous movement record has a different date Id
 					MovementRecord(
 						id = suspectTodayMarket.id,
