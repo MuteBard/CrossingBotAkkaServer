@@ -61,6 +61,7 @@ object  MarketOperations extends MongoDBOperations {
 	}
 
 	def massUpdateMovementRecord(mr : MovementRecord) : Unit = {
+		updateMovementRecordField(mr, "hourBlockId", mr.orderNum)
 		updateMovementRecordField(mr, "hourBlockId", mr.hourBlockId)
 		updateMovementRecordField(mr, "quarterBlockId", mr.quarterBlockId)
 		updateMovementRecordField(mr, "todayHigh", mr.todayHigh)

@@ -53,12 +53,11 @@ class MarketActor extends Actor with ActorLogging {
 			//log.info(s"[Create_New_Movement_Record] Checking for difference in block ids ($newHourBlockId,$newQuarterBlockId)")
 			val twoMRs = MarketOperations.readLastNDaysMovementRecords(2)
 			val suspectTodayMarket = twoMRs(0)
-			val isThirdMrOrMore = twoMRs.length > 2
 			val mr =
 				if (suspectTodayMarket.id == todayDateId()) { //if this movement record is within today
 					suspectTodayMarket
-				} else if (twoMRs(0).id == "") { //if this is the very first movement record
-					MovementRecord()
+				} else if (twoMRs(0).orderNum == 0) { //if this is the very first movement record
+					twoMRs(0)
 				} else { //if this is a new day and a previous movement record has a different date Id
 					MovementRecord(
 						id = suspectTodayMarket.id,
@@ -77,7 +76,7 @@ class MarketActor extends Actor with ActorLogging {
 					log.info(s"[Create_New_Movement_Record] Generating all block patterns for the day")
 
 					todayMarket =
-						if(isThirdMrOrMore) {
+						if(twoMRs(0).orderNum > 1) {
 							val yesterdayMarket = suspectTodayMarket
 							val dayBeforeMarket = twoMRs(1)
 							val margin = yesterdayMarket.stalksPurchased * .25
@@ -90,6 +89,7 @@ class MarketActor extends Actor with ActorLogging {
 								Day().generate("bad")
 							}
 						}else{
+							log.info(s"[Create_New_Movement_Record] Generating relatively good day")
 							Day().generate("good")
 						}
 
@@ -97,6 +97,7 @@ class MarketActor extends Actor with ActorLogging {
 					log.info(s"[Create_New_Movement_Record] Today's Market: $todayMarket")
 				}
 
+				val newOrderNum = mr.orderNum + 1
 				val turnipPriceRaw = mr.latestTurnip.price + todayMarket.getQuarterBlock(newHourBlockId, newQuarterBlockId).change
 				val turnipPriceResolved = if(turnipPriceRaw >= 10) turnipPriceRaw else 10
 				val newTurnip = TurnipTime(hour,minute, turnipPriceResolved)
@@ -113,7 +114,7 @@ class MarketActor extends Actor with ActorLogging {
 				val monthForMR = month
 				val dayForMR = day
 
-				val newMr = MovementRecord(_id, newHourBlockId, newQuarterBlockId, high, low, stalksPurchased, newTurnip, turnipHistory, latestHourBlockName, latestHourBlock,
+				val newMr = MovementRecord(_id, newOrderNum,newHourBlockId, newQuarterBlockId, high, low, stalksPurchased, newTurnip, turnipHistory, latestHourBlockName, latestHourBlock,
 					latestQuarterBlock, quarterBlockHistory, yearForMR, monthForMR, dayForMR
 				)
 
@@ -131,8 +132,7 @@ class MarketActor extends Actor with ActorLogging {
 		//AUTOMATED
 		case Delete_Earliest_Movement_Records =>
 			log.info(s"[Delete_Earliest_Movement_Records] Getting earliest Movement Record")
-			val dt = Calendar.getInstance()
-			val currentMonth = dt.get(Calendar.MONTH) + 1
+			val currentMonth = month
 			val oldMonth = MarketOperations.readEarliestMovementRecord().month
 			if (currentMonth - oldMonth > 2) {
 				log.info(s"[Delete_Earliest_Movement_Records] Deleting old Movement Records")

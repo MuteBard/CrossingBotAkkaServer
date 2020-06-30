@@ -10,6 +10,7 @@ import Model.TurnipTime_.TurnipTime
 object MovementRecord_ {
 	case class MovementRecord(
          id: String = "",
+         orderNum : Int = 0,
          hourBlockId: Int = 0,
          quarterBlockId: Int = 0,
          todayHigh: Int = 100,
