@@ -61,7 +61,7 @@ object  MarketOperations extends MongoDBOperations {
 	}
 
 	def massUpdateMovementRecord(mr : MovementRecord) : Unit = {
-		updateMovementRecordField(mr, "hourBlockId", mr.orderNum)
+		updateMovementRecordField(mr, "orderNum", mr.orderNum)
 		updateMovementRecordField(mr, "hourBlockId", mr.hourBlockId)
 		updateMovementRecordField(mr, "quarterBlockId", mr.quarterBlockId)
 		updateMovementRecordField(mr, "todayHigh", mr.todayHigh)
@@ -70,9 +70,6 @@ object  MarketOperations extends MongoDBOperations {
 		updateMovementRecordField(mr, "latestTurnip", mr.latestTurnip)
 		updateMovementRecordField(mr, "turnipHistory", mr.turnipHistory)
 		updateMovementRecordField(mr, "hourBlockName", mr.hourBlockName)
-		updateMovementRecordField(mr, "latestHourBlock", mr.latestHourBlock)
-		updateMovementRecordField(mr, "latestQuarterBlock", mr.latestQuarterBlock)
-		updateMovementRecordField(mr, "quarterBlockHistory", mr.quarterBlockHistory)
 		updateMovementRecordField(mr, "year", mr.year)
 		updateMovementRecordField(mr, "month", mr.month)
 		updateMovementRecordField(mr, "day", mr.day)
@@ -88,14 +85,15 @@ object  MarketOperations extends MongoDBOperations {
 
 	def readMovementRecord(): Seq[MovementRecord] = {
 		val source = MongoSource(allMR.find(classOf[MovementRecord]))
-		val daySeqFuture = source.runWith(Sink.seq)
-		val daySeq : Seq[MovementRecord] = Await.result(daySeqFuture, chill seconds)
-		if(daySeq.isEmpty){
-			List(MovementRecord())
+		val mrSeqFuture = source.runWith(Sink.seq)
+		val mrSeq : Seq[MovementRecord] = Await.result(mrSeqFuture, chill seconds)
+		if(mrSeq.isEmpty){
+			Seq(MovementRecord())
 		}else{
-			daySeq
+			mrSeq
 		}
 	}
+
 
 	def deleteOldestMovementRecords(month : Int) :  Unit = {
 		val mrList  = readMovementRecord().toList

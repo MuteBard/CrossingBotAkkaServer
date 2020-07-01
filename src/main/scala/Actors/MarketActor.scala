@@ -51,22 +51,21 @@ class MarketActor extends Actor with ActorLogging {
 		case Create_New_Movement_Record(newHourBlockId, newQuarterBlockId) =>
 
 			//log.info(s"[Create_New_Movement_Record] Checking for difference in block ids ($newHourBlockId,$newQuarterBlockId)")
-			val twoMRs = MarketOperations.readLastNDaysMovementRecords(2)
-			val suspectTodayMarket = twoMRs(0)
+			val movementRecords = MarketOperations.readLastNDaysMovementRecords(3)
 			val mr =
-				if (suspectTodayMarket.id == todayDateId()) { //if this movement record is within today
-					suspectTodayMarket
-				} else if (twoMRs(0).orderNum == 0) { //if this is the very first movement record
-					MovementRecord()
-				} else { //if this is a new day and a previous movement record has a different date Id
+			//if this is a new day and this is not the first movement record, copy essential data over before a new mr is created
+				if(movementRecords(0).id != todayDateId()) {
 					MovementRecord(
-						id = suspectTodayMarket.id,
-						latestTurnip = suspectTodayMarket.latestTurnip,
-						todayHigh = suspectTodayMarket.latestTurnip.price,
-						todayLow = suspectTodayMarket.latestTurnip.price,
-						stalksPurchased = suspectTodayMarket.stalksPurchased,
-						turnipHistory = List(suspectTodayMarket.turnipHistory.head)
+						id = todayDateId(),
+						orderNum = movementRecords(0).orderNum + 1,
+						latestTurnip = movementRecords(0).latestTurnip,
+						todayHigh = movementRecords(0).latestTurnip.price,
+						todayLow = movementRecords(0).latestTurnip.price,
+						stalksPurchased = movementRecords(0).stalksPurchased,
+						turnipHistory = List(movementRecords(0).turnipHistory.head)
 					)
+				}else{
+					movementRecords(0)
 				}
 
 			if ((currentQuarterBlockId != newQuarterBlockId) || (currentHourBlockId == -1 && currentQuarterBlockId == -1)) {
@@ -76,9 +75,9 @@ class MarketActor extends Actor with ActorLogging {
 					log.info(s"[Create_New_Movement_Record] Generating all block patterns for the day")
 
 					todayMarket =
-						if(twoMRs(0).orderNum > 1) {
-							val yesterdayMarket = suspectTodayMarket
-							val dayBeforeMarket = twoMRs(1)
+						if(movementRecords(0).orderNum >= 2) {
+							val yesterdayMarket = movementRecords(1)
+							val dayBeforeMarket = movementRecords(2)
 							val margin = yesterdayMarket.stalksPurchased * .25
 							// if the market grew more than 25% of its size yesterday, then it is a good day otherwise a bad day
 							if (yesterdayMarket.stalksPurchased - dayBeforeMarket.stalksPurchased > margin) {
@@ -97,25 +96,21 @@ class MarketActor extends Actor with ActorLogging {
 					log.info(s"[Create_New_Movement_Record] Today's Market: $todayMarket")
 				}
 
-				val newOrderNum = mr.orderNum + 1
+				val id = todayDateId()
+				val newOrderNum = mr.orderNum
 				val turnipPriceRaw = mr.latestTurnip.price + todayMarket.getQuarterBlock(newHourBlockId, newQuarterBlockId).change
 				val turnipPriceResolved = if(turnipPriceRaw >= 10) turnipPriceRaw else 10
 				val newTurnip = TurnipTime(hour,minute, turnipPriceResolved)
-				val _id = todayDateId()
 				val high = Math.max(newTurnip.price, mr.todayHigh)
 				val low = Math.min(newTurnip.price, mr.todayLow)
-				val turnipHistory = newTurnip +: mr.turnipHistory
+				val turnipHistory = if((newTurnip.hour != mr.latestTurnip.hour) && (newTurnip.minute != mr.latestTurnip.minute)) newTurnip +: mr.turnipHistory else List(newTurnip)
 				val stalksPurchased = Await.result((userActor ? UserActor.Read_All_Stalks_Purchased).mapTo[Int], chill seconds)
-				val latestHourBlock = todayMarket.getHourBlock(newHourBlockId)
 				val latestHourBlockName = todayMarket.getHourBlock(newHourBlockId).name
-				val latestQuarterBlock = todayMarket.getQuarterBlock(newHourBlockId, newQuarterBlockId)
-				val quarterBlockHistory = todayMarket.getQuarterBlockHistory(newHourBlockId, newQuarterBlockId)
 				val yearForMR = year
 				val monthForMR = month
 				val dayForMR = day
 
-				val newMr = MovementRecord(_id, newOrderNum,newHourBlockId, newQuarterBlockId, high, low, stalksPurchased, newTurnip, turnipHistory, latestHourBlockName, latestHourBlock,
-					latestQuarterBlock, quarterBlockHistory, yearForMR, monthForMR, dayForMR
+				val newMr = MovementRecord(id, newOrderNum,newHourBlockId, newQuarterBlockId, high, low, stalksPurchased, newTurnip, turnipHistory, latestHourBlockName, yearForMR, monthForMR, dayForMR
 				)
 
 				if ((newHourBlockId == 0 && newQuarterBlockId == 0) || mr.id != todayDateId() || ((currentHourBlockId == -1 && currentQuarterBlockId == -1) && mr.id == "")) {

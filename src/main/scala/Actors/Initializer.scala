@@ -1,5 +1,4 @@
 package Actors
-
 import GraphQL.Service._
 import akka.actor.{ActorRef, ActorSystem, Props}
 

@@ -1,15 +1,10 @@
 package Model
-
-import Model.HourBlock_.HourBlock
-import Model.QuarterBlock_.QuarterBlock
+import Auxillary.Time.todayDateId
 import Model.TurnipTime_.TurnipTime
-
-//import Data.Market.MarketHourBlock.{HourBlock, HourBlockJsonProtocol}
-//import Data.Market.MarketQuarterBlock.{QuarterBlock, QuarterBlockJsonProtocol}
 
 object MovementRecord_ {
 	case class MovementRecord(
-         id: String = "",
+         id: String = todayDateId(),
          orderNum : Int = 0,
          hourBlockId: Int = 0,
          quarterBlockId: Int = 0,
@@ -19,9 +14,6 @@ object MovementRecord_ {
          latestTurnip: TurnipTime = TurnipTime(),
          turnipHistory: List[TurnipTime] = List(TurnipTime()),
          hourBlockName: String = "",
-         latestHourBlock: HourBlock = null,
-         latestQuarterBlock: QuarterBlock = null,
-         quarterBlockHistory: List[QuarterBlock] = List(),
          year : Int = 0,
          month: Int = 0,
          day: Int = 0,

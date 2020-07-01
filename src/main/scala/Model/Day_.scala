@@ -24,8 +24,8 @@ object Day_ {
 			val value = random.nextInt(10) + 1
 			value match {
 				case x if (1 to 3).contains(x) => hour.sleepy(hourBlockId)
-				case x if (4 to 5).contains(x) =>  hour.normal(hourBlockId)
-				case x if (6 to 8).contains(x) => hour.good(hourBlockId)
+				case x if (4 to 6).contains(x) =>  hour.normal(hourBlockId)
+				case x if (7 to 8).contains(x) => hour.good(hourBlockId)
 				case 9 => hour.bad(hourBlockId)
 				case 10 => hour.risky(hourBlockId)
 			}
@@ -37,8 +37,8 @@ object Day_ {
 			val value = random.nextInt(10) + 1
 			value match {
 				case x if (1 to 3).contains(x) => hour.sleepy(hourBlockId)
-				case x if (4 to 5).contains(x) =>  hour.normal(hourBlockId)
-				case x if (6 to 8).contains(x) =>  hour.bad(hourBlockId)
+				case x if (4 to 6).contains(x) =>  hour.normal(hourBlockId)
+				case x if (7 to 8).contains(x) =>  hour.bad(hourBlockId)
 				case 9 => hour.good(hourBlockId)
 				case 10 => hour.risky(hourBlockId)
 			}
