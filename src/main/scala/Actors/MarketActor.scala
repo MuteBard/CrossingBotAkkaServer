@@ -113,7 +113,7 @@ class MarketActor extends Actor with ActorLogging {
 				val newMr = MovementRecord(id, newOrderNum,newHourBlockId, newQuarterBlockId, high, low, stalksPurchased, newTurnip, turnipHistory, latestHourBlockName, yearForMR, monthForMR, dayForMR
 				)
 
-				if ((newHourBlockId == 0 && newQuarterBlockId == 0) || mr.id != todayDateId() || ((currentHourBlockId == -1 && currentQuarterBlockId == -1) && mr.id == "")) {
+				if ((newHourBlockId == 0 && newQuarterBlockId == 0) || mr.id != todayDateId() || ((currentHourBlockId == -1 && currentQuarterBlockId == -1) && mr.orderNum == 0)) {
 					log.info(s"[Create_New_Movement_Record] Creating new Movement Record ($newHourBlockId,$newQuarterBlockId)")
 					MarketOperations.createMovementRecord(newMr)
 				} else {
