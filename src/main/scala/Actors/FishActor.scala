@@ -22,45 +22,47 @@ class FishActor extends Actor with ActorLogging{
 	override def receive: Receive = {
 		case Read_Fish_All =>
 			log.info("[Read_Fish_All] Selecting all FISH")
-			sender() ! FishOperations.readAll()
-
-		case Read_One_Fish_By_Random() =>
-			log.info(s"[Read_One_Fish_By_Random] Selecting FISH by random")
-			val fish = FishOperations.readOneByRandom(rarityValue)
-			log.info(s"[Read_One_Fish_By_Random] Found FISH ${fish.name}")
-			sender() ! fish
-
-		case Read_One_Fish_By_Id(id : Int) =>
-			log.info(s"[Read_One_Fish_By_Id] Selecting FISH with id : $id")
-			val fishSeq = FishOperations.readOneById(id)
-			val fishExists = fishSeq.nonEmpty
-			if(fishExists){
-				log.info(s"[Read_One_Fish_By_Id] FISH with id $id found")
-				sender() ! fishSeq.head
-			}else {
-				log.info(s"[Read_One_Fish_By_Id] FISH with id $id does not exist")
-				sender() ! Fish()
-			}
-
-		case Read_One_Fish_By_Name(name : String) =>
-			log.info(s"[Read_One_Fish_By_Name] Selecting FISH with name : $name")
-			val fishSeq = FishOperations.readOneByName(name)
-			val fishExists = fishSeq.nonEmpty
-			if(fishExists){
-				log.info(s"[Read_One_Fish_By_Name] FISH with name $name found")
-				sender() ! fishSeq.head
-			}else {
-				log.info(s"[Read_One_Fish_By_Name] FISH with name $name does not exist")
-				sender() ! Fish()
+			FishOperations.readAll() match {
+				case "empty" => sender() ! Vector()
+				case fishes => sender() ! fishes
 			}
 
 		case Read_All_Fish_By_Month(month : List[String]) =>
 			log.info(s"[Read_All_Fish_By_Month] Selecting FISH based on month(s) provided")
-			sender() ! FishOperations.readAllByMonth(month)
+			FishOperations.readAllByMonth(month) match {
+				case "empty" => sender() ! Vector()
+				case fishes => sender() ! fishes
+			}
 
 		case Read_All_Rarest_Fish_By_Month(month : List[String]) =>
 			log.info(s"[Read_All_Rarest_Fish_By_Month] Selecting FISH based on rarity")
-			sender() ! FishOperations.readAllRarestByMonth(month)
+			FishOperations.readAllRarestByMonth(month) match {
+				case "empty" => sender() ! Vector()
+				case fishes => sender() ! fishes
+			}
+
+		case Read_One_Fish_By_Random() =>
+			log.info(s"[Read_One_Fish_By_Random] Selecting FISH by random")
+			FishOperations.readOneByRandom(rarityValue) match {
+				case "empty" => sender ! Fish()
+				case fish => sender() ! fish
+			}
+
+		case Read_One_Fish_By_Id(id : Int) =>
+			log.info(s"[Read_One_Fish_By_Id] Selecting FISH with id : $id")
+			FishOperations.readOneById(id) match {
+				case "empty" => sender() ! Fish()
+				case fish => sender() ! fish
+			}
+
+		case Read_One_Fish_By_Name(name : String) =>
+			log.info(s"[Read_One_Fish_By_Name] Selecting FISH with name : $name")
+			FishOperations.readOneByName(name) match {
+				case "empty" => sender() ! Fish()
+				case fish => sender() ! fish
+			}
+
+
 
 	}
 

@@ -103,7 +103,7 @@ class MarketActor extends Actor with ActorLogging {
 				val newTurnip = TurnipTime(hour,minute, turnipPriceResolved)
 				val high = Math.max(newTurnip.price, mr.todayHigh)
 				val low = Math.min(newTurnip.price, mr.todayLow)
-				val turnipHistory =  newTurnip +: mr.turnipHistory 
+				val turnipHistory =  newTurnip +: mr.turnipHistory
 				val stalksPurchased = Await.result((userActor ? UserActor.Read_All_Stalks_Purchased).mapTo[Int], chill seconds)
 				val latestHourBlockName = todayMarket.getHourBlock(newHourBlockId).name
 				val yearForMR = year

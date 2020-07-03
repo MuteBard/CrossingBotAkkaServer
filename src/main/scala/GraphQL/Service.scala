@@ -40,7 +40,7 @@ object Service {
 
 		//--Bug--
     	//Queries
-		def getAllBugs:                                     UIO[List[Bug]]
+		def getAllBugs:                                     UIO[Vector[Bug]]
 		def getAllBugsByMonth(months : List[String]):       IO[NotFound, List[Bug]]
 		def getAllRareBugsByMonth(months : List[String]):   IO[NotFound, List[Bug]]
 		def getBugById(id : Int):                           IO[NotFound, Bug]
@@ -49,7 +49,7 @@ object Service {
 
 		//--Fish--
 		//Queries
-		def getAllFishes:                                   UIO[List[Fish]]
+		def getAllFishes:                                   UIO[Vector[Fish]]
 		def getAllFishesByMonth(months : List[String]):     IO[NotFound, List[Fish]]
 		def getAllRareFishesByMonth(months : List[String]): IO[NotFound, List[Fish]]
 		def getFishById(id : Int):                          IO[NotFound, Fish]
@@ -167,10 +167,10 @@ object Service {
 		}
 
 		//--Bug--
-		def getAllBugs: UIO[List[Bug]] = {
-			val allBugs = Await.result((bugActor ? BugActor.Read_Bug_All).mapTo[List[Bug]], chill seconds)
-			IO.succeed(allBugs)
+		def getAllBugs: UIO[Vector[Bug]] = {
+			IO.succeed(Await.result((bugActor ? BugActor.Read_Bug_All).mapTo[Vector[Bug]], chill seconds))
 		}
+
 		def getAllBugsByMonth(months : List[String]) : IO[NotFound, List[Bug]] = {
 			val allBugs = Await.result((bugActor ? BugActor.Read_All_Bug_By_Month(months)).mapTo[List[Bug]], chill seconds)
 			if(allBugs.nonEmpty) IO.succeed(allBugs)
@@ -199,8 +199,8 @@ object Service {
 
 
 		//--Fish--
-		def getAllFishes: UIO[List[Fish]] = {
-			val allFishes = Await.result((fishActor ? FishActor.Read_Fish_All).mapTo[List[Fish]], chill seconds)
+		def getAllFishes: UIO[Vector[Fish]] = {
+			val allFishes = Await.result((fishActor ? FishActor.Read_Fish_All).mapTo[Vector[Fish]], chill seconds)
 			IO.succeed(allFishes)
 		}
 		def getAllFishesByMonth(months : List[String]) : IO[NotFound, List[Fish]] = {

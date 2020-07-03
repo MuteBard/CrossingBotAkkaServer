@@ -1,13 +1,10 @@
 package Dao
 
-import com.mongodb.reactivestreams.client.{MongoClient, MongoClients, MongoDatabase}
+import com.mongodb.reactivestreams.client.MongoClients
 
 class MongoDBOperations {
-	val uri : String = sys.env.getOrElse("CB_MONGODB_URI", "mongodb://localhost:27017")
-	val dbname : String = sys.env.getOrElse("DBNAME", "crossingbot")
-	val client: MongoClient = MongoClients.create(uri)
-	protected val db: MongoDatabase = client.getDatabase(dbname)
+	val client = MongoClients.create("mongodb://localhost:27017")
+	protected val db = client.getDatabase("crossingbot")
 	client
 }
-
 

@@ -1,7 +1,6 @@
 
 package Dao
 import Auxillary.Time.log
-import Model.Fish_.Fish
 import akka.stream.alpakka.mongodb.scaladsl.{MongoSink, MongoSource}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
@@ -13,14 +12,17 @@ import org.mongodb.scala.model.{Filters, Updates}
 import scala.util.{Failure, Success}
 import Actors.Initializer.system
 import Model.Bug_._
+import Model.Fish_._
 import Model.TurnipTransaction_._
 import Model.User_._
 import Model.Pocket_._
-import scala.language.postfixOps
 
+import scala.language.postfixOps
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 import system.dispatcher
+
+import scala.util.control.Exception.allCatch
 
 
 object UserOperations extends MongoDBOperations {
@@ -33,6 +35,26 @@ object UserOperations extends MongoDBOperations {
 	private val allUsers = db
 		.getCollection("user", classOf[User])
 		.withCodecRegistry(codecRegistryUser)
+
+
+	def safeVector(value : () => Vector[User], methodName : String) :  Any = {
+		allCatch.opt(value()) match {
+			case Some(users) => users
+			case None =>
+				log.warn("UserOperations", methodName, "Failure")
+				"empty"
+		}
+	}
+
+	def safeVectorHead(value : () => Vector[User], methodName : String) : Any = {
+		allCatch.opt(value().head) match {
+			case Some(user) => user
+			case None =>
+				log.warn("UserOperations", methodName, "Failure")
+				"empty"
+		}
+	}
+
 
 	def createOneUser(user : User): Unit = {
 		val source = Source(List(user))
@@ -53,6 +75,9 @@ object UserOperations extends MongoDBOperations {
 		val userSeqFuture = source.runWith(Sink.seq)
 		val userSeq : Seq[User] = Await.result(userSeqFuture, chill seconds)
 		userSeq
+
+//		lazy val result	= Await.result(userFuture, chill seconds).toVector
+//		safeVector(() => result, "readOneUser")
 	}
 
 	def readAllChannelsWithCrossingBotAdded() : Seq[User] = {

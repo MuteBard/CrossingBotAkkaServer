@@ -18,6 +18,7 @@ import scala.concurrent.Await
 import system.dispatcher
 
 import scala.language.postfixOps
+import scala.util.control.Exception._
 
 
 object BugOperations extends MongoDBOperations{
@@ -26,6 +27,25 @@ object BugOperations extends MongoDBOperations{
 	private val allBugs = db
 		.getCollection("bug", classOf[Bug])
 		.withCodecRegistry(codecRegistry)
+
+
+	def safeVector(value : () => Vector[Bug], methodName : String) :  Any = {
+		allCatch.opt(value()) match {
+			case Some(bugs) => bugs
+			case None =>
+				log.warn("BugOperations", methodName, "Failure")
+				"empty"
+		}
+	}
+
+	def safeVectorHead(value : () => Vector[Bug], methodName : String) : Any = {
+		allCatch.opt(value().head) match {
+			case Some(bug) => bug
+			case None =>
+				log.warn("BugOperations", methodName, "Failure")
+				"empty"
+		}
+	}
 
 	def createAll(): Unit = {
 		val source = Source(Bugs).map(_ => Filters.eq("species", "bug"))
@@ -43,67 +63,53 @@ object BugOperations extends MongoDBOperations{
 	}
 
 
-
-	def readAll(): List[Bug] = {
+	//Vector[Bug] on success, String on failure
+	def readAll(): Any = {
 		val source = MongoSource(allBugs.find(classOf[Bug]))
-		val bugSeqFuture = source.runWith(Sink.seq)
-		val bugSeq : Seq[Bug] = Await.result(bugSeqFuture, chill seconds)
-		bugSeq.toList
+		val bugFuture = source.runWith(Sink.seq)
+		lazy val result	= Await.result(bugFuture, chill seconds).toVector
+		safeVector(() => result, "readAll")
 	}
 
-	def readOneById(query : Int) : Seq[Bug] = {
-		val source = MongoSource(allBugs.find(classOf[Bug])).filter(bugs => bugs.id == query)
-		val bugSeqFuture = source.runWith(Sink.seq)
-		val bugSeq : Seq[Bug] = Await.result(bugSeqFuture, chill seconds)
-		bugSeq
-	}
-
-	def readOneByName(query : String) : Seq[Bug] = {
-		val source = MongoSource(allBugs.find(classOf[Bug])).filter(bugs => bugs.name == query)
-		val bugSeqFuture = source.runWith(Sink.seq)
-		val bugSeq : Seq[Bug] = Await.result(bugSeqFuture, chill seconds)
-		bugSeq
-	}
-
-	//	def readOneByRarity(query : Int) : Bug = {
-	//		val source = MongoSource(allBugs.find(classOf[Bug])).filter(bugs => bugs.rarity == query)
-	//		val bugSeqFuture = source.runWith(Sink.seq)
-	//		val bugSeq : Seq[Bug] = Await.result(bugSeqFuture, 1 seconds)
-	//		Random.shuffle(bugSeq.toList).head
-	//	}
-
-	def readAllByMonth(query : List[String]) : List[Bug] = {
+	//Vector[Bug] on success, String on failure
+	def readAllByMonth(query : List[String]) : Any = {
 		val source = MongoSource(allBugs.find(classOf[Bug])).filter(bugs => bugs.availability.intersect(query) == query)
 		val bugSeqFuture = source.runWith(Sink.seq)
-		val bugSeq : Seq[Bug] = Await.result(bugSeqFuture, chill seconds)
-		bugSeq.toList
+		lazy val result = Await.result(bugSeqFuture, chill seconds).toVector
+		safeVector(() => result, "readAllByMonth")
 	}
 
-	def readOneByRandom(queryInt : Int) : Bug = {
+	//Vector[Bug] on success, String on failure
+	def readAllRarestByMonth(queryList : List[String]) : Any = {
+		val source = MongoSource(allBugs.find(classOf[Bug])).filter(bugs => (bugs.rarity == 5 || bugs.rarity == 4) && bugs.availability.intersect(queryList) == queryList)
+		val bugSeqFuture = source.runWith(Sink.seq)
+		lazy val result = Await.result(bugSeqFuture, chill seconds).toVector
+		safeVector(() => result, "readAllRarestByMonth")
+	}
+
+	//Bug on success, String on failure
+	def readOneByRandom(query : Int) : Any = {
 		val month = List(threeLetterMonth)
-		val source = MongoSource(allBugs.find(classOf[Bug])).filter(bugs => (bugs.rarity == queryInt) && bugs.availability.intersect(month) == month)
-		val bugSeqFuture = source.runWith(Sink.seq)
-		val bugSeq : Seq[Bug] = Await.result(bugSeqFuture, chill seconds)
-		Random.shuffle(bugSeq.toList).head
+		val source = MongoSource(allBugs.find(classOf[Bug])).filter(bugs => (bugs.rarity == query) && bugs.availability.intersect(month) == month)
+		val bugFuture = source.runWith(Sink.seq)
+		lazy val result = Random.shuffle(Await.result(bugFuture, chill seconds).toVector)
+		safeVectorHead(() => result, "readOneByRandom")
 	}
 
-	def readAllRarestByMonth(queryList : List[String]) : List[Bug] = {
-		val source = MongoSource(allBugs.find(classOf[Bug])).filter(bugs => (bugs.rarity == 5 || bugs.rarity == 4 ) && bugs.availability.intersect(queryList) == queryList)
-		val bugSeqFuture = source.runWith(Sink.seq)
-		val bugSeq : Seq[Bug] = Await.result(bugSeqFuture, chill seconds)
-		bugSeq.toList
+	//Bug on success, String on failure
+	def readOneById(query : Int) : Any = {
+		val source = MongoSource(allBugs.find(classOf[Bug])).filter(bugs => bugs.id == query)
+		val bugFuture = source.runWith(Sink.seq)
+		lazy val result = Await.result(bugFuture, chill seconds).toVector
+		safeVectorHead(() => result, "readOneById")
 	}
 
-	//	def updateOne(/*id : String ,data : Bug*/): Unit = {
-	//		val id = "B1"
-	//		val source = MongoSource(allBugs.find(classOf[Bug]))  //FIND
-	//    		.map(bug => DocumentUpdate(filter = Filters.eq("bugId", id), update = Updates.set("bells", 90))) //UPDATE
-	//		val taskFuture = source.runWith(MongoSink.updateOne(allBugs)) //REPLACE
-	//		taskFuture.onComplete{
-	//			case Success(_) => println(s"[BugOperations][createAll][Success] Successfully updated BUG at $id")
-	//			case Failure (ex) => println(s"Failed update: $ex")
-	//		}
-	//	}
-
+	//Bug on success, String on failure
+	def readOneByName(query : String) : Any = {
+		val source = MongoSource(allBugs.find(classOf[Bug])).filter(bugs => bugs.name == query)
+		val bugFuture = source.runWith(Sink.seq)
+		lazy val result = Await.result(bugFuture, chill seconds).toVector
+		safeVectorHead(() => result, "readOneByName")
+	}
 
 }

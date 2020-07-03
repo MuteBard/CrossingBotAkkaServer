@@ -28,14 +28,14 @@ object Queries {
 		getTurnipPrices:                dummyArgs => UIO[Int],
 
 		//Bug
-		getAllBugs:                     UIO[List[Bug]],
+		getAllBugs:                     UIO[Vector[Bug]],
 		getAllBugsByMonth:              bugMonthsArgs => IO[NotFound, List[Bug]],
 		getAllRareBugsByMonth:          bugMonthsArgs => IO[NotFound, List[Bug]],
 		getBugById:                     bugIdArgs => IO[NotFound, Bug],
 		getBugByName:                   bugNameArgs => IO[NotFound, Bug],
 		getBugByRandom:                 dummyArgs => IO[NotFound, Bug],
 		//Fish
-		getAllFishes:                   UIO[List[Fish]],
+		getAllFishes:                   UIO[Vector[Fish]],
 		getAllFishesByMonth:            fishMonthsArgs => IO[NotFound, List[Fish]],
 		getAllRareFishesByMonth:        fishMonthsArgs => IO[NotFound, List[Fish]],
 		getFishById:                    fishIdArgs => IO[NotFound, Fish],
