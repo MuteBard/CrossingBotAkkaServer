@@ -70,21 +70,18 @@ object UserOperations extends MongoDBOperations {
 		genericUpdateUser(username, "avatar", avatar)
 		}
 
-	def readOneUser(username : String): Seq[User] = {
+	def readOneUser(username : String): Any = {
 		val source = MongoSource(allUsers.find(classOf[User])).filter(user => user.username == username)
-		val userSeqFuture = source.runWith(Sink.seq)
-		val userSeq : Seq[User] = Await.result(userSeqFuture, chill seconds)
-		userSeq
-
-//		lazy val result	= Await.result(userFuture, chill seconds).toVector
-//		safeVector(() => result, "readOneUser")
+		val userFuture = source.runWith(Sink.seq)
+		lazy val result	= Await.result(userFuture, chill seconds).toVector
+		safeVectorHead(() => result, "readOneUser")
 	}
 
-	def readAllChannelsWithCrossingBotAdded() : Seq[User] = {
+	def readAllChannelsWithCrossingBotAdded() : Any = {
 		val source = MongoSource(allUsers.find(classOf[User])).filter(user => user.addedToChannel)
-		val userSeqFuture = source.runWith(Sink.seq)
-		val userSeq : Seq[User] = Await.result(userSeqFuture, chill seconds)
-		userSeq
+		val userFuture = source.runWith(Sink.seq)
+		lazy val result = Await.result(userFuture, chill seconds).toVector
+		safeVector(() => result ,"readAllChannelsWithCrossingBotAdded")
 	}
 
 	def readTotalStalks() : Int = {
@@ -170,16 +167,28 @@ object UserOperations extends MongoDBOperations {
 		genericUpdateUser(user.username, "liveTurnips", user.liveTurnips)
 		genericUpdateUser(user.username, "turnipTransactionHistory", user.turnipTransactionHistory)
 		genericUpdateUser(user.username, "bells", user.bells)
-		readOneUser(user.username).head
+		readOneUser(user.username) match {
+			case "empty" =>
+				log.warn("UserOperations", "updateOneUserTransaction", "Failure")
+				User()
+			case user : User =>
+				user
+		}
 	}
 
 	def updateTurnipTransactionStatsUponRetrieval(user: User): User = {
 		genericUpdateUser(user.username, "liveTurnips", user.liveTurnips)
 		genericUpdateUser(user.username, "turnipTransactionHistory", user.turnipTransactionHistory)
-		readOneUser(user.username).head
+		readOneUser(user.username) match {
+			case "empty" =>
+				log.warn("UserOperations", "updateTurnipTransactionStatsUponRetrieval", "Failure")
+				User()
+			case user : User =>
+				user
+		}
 	}
 
-	def deleteOneForUser(user : User, username :String, species : String, creatureName : String, creatureBells: Int): Unit = {
+	def deleteOneForUser(user : User,  species : String, creatureName : String, creatureBells: Int): Unit = {
 		val updatedPocket = if(species == BUG){
 			val	unSoughtBugs = user.pocket.bug.filter(creature => creature.name != creatureName)
 			val	soughtBugs = user.pocket.bug.filter(creature => creature.name == creatureName)
@@ -200,29 +209,38 @@ object UserOperations extends MongoDBOperations {
 	}
 
 	def deleteAllCreatureForUser(username : String, species : String): Int = {
-		val userList: List[User] = readOneUser(username).toList
-		val user: User = userList.head
-		if(species == BUG){
-			val bugBells = Await.result(Source(user.pocket.bug).via(Flow[Bug].fold[Int](0)(_ + _.bells)).runWith(Sink.head), chill second)
-			genericUpdateUser(user.username, "bells", user.bells + bugBells)
-			genericUpdateUser(user.username, "pocket", Pocket(List(),  user.pocket.fish))
-			bugBells
-		}else{
-			val fishBells = Await.result(Source(user.pocket.fish).via(Flow[Fish].fold[Int](0)(_ + _.bells)).runWith(Sink.head), chill second)
-			genericUpdateUser(user.username, "bells", user.bells + fishBells)
-			genericUpdateUser(user.username, "pocket", Pocket(user.pocket.bug,  List()))
-			fishBells
+		readOneUser(username) match {
+			case "empty" =>
+				log.warn("UserOperations", "deleteAllCreatureForUser", "Failure")
+				0
+			case user : User =>
+				species match {
+					case BUG =>
+						val bugBells = Await.result(Source(user.pocket.bug).via(Flow[Bug].fold[Int](0)(_ + _.bells)).runWith(Sink.head), chill second)
+						genericUpdateUser(user.username, "bells", user.bells + bugBells)
+						genericUpdateUser(user.username, "pocket", Pocket(List(),  user.pocket.fish))
+						bugBells
+					case FISH =>
+						val fishBells = Await.result(Source(user.pocket.fish).via(Flow[Fish].fold[Int](0)(_ + _.bells)).runWith(Sink.head), chill second)
+						genericUpdateUser(user.username, "bells", user.bells + fishBells)
+						genericUpdateUser(user.username, "pocket", Pocket(user.pocket.bug,  List()))
+						fishBells
+				}
 		}
 	}
 
 	def deleteAllForUser(username : String): Int = {
-		val userList: List[User] = readOneUser(username).toList
-		val user: User = userList.head
-		val bugBells = Await.result(Source(user.pocket.bug).via(Flow[Bug].fold[Int](0)(_ + _.bells)).runWith(Sink.head), chill second)
-		val fishBells = Await.result(Source(user.pocket.fish).via(Flow[Fish].fold[Int](0)(_ + _.bells)).runWith(Sink.head), chill second)
-		genericUpdateUser(user.username, "bells", user.bells + bugBells + fishBells)
-		genericUpdateUser(user.username, "pocket", Pocket(List(),  user.pocket.fish))
-		bugBells + fishBells
+		readOneUser(username) match {
+			case "empty" =>
+				log.warn("UserOperations", "deleteAllForUser", "Failure")
+				0
+			case user : User =>
+				val bugBells = Await.result(Source(user.pocket.bug).via(Flow[Bug].fold[Int](0)(_ + _.bells)).runWith(Sink.head), chill second)
+				val fishBells = Await.result(Source(user.pocket.fish).via(Flow[Fish].fold[Int](0)(_ + _.bells)).runWith(Sink.head), chill second)
+				genericUpdateUser(user.username, "bells", user.bells + bugBells + fishBells)
+				genericUpdateUser(user.username, "pocket", Pocket(List(),  user.pocket.fish))
+				bugBells + fishBells
+		}
 	}
 
 
@@ -230,7 +248,6 @@ object UserOperations extends MongoDBOperations {
 	def deleteUser(username : String): Unit = {
 		val source = MongoSource(allUsers.find(classOf[User])).map(_ => Filters.eq("username", username))
 		val taskFuture = source.runWith(MongoSink.deleteOne(allUsers))
-
 		taskFuture.onComplete{
 			case Success(_) => log.info("UserOperations","deleteUser", "Success", s"Deleteed $username")
 			case Failure (ex) => log.warn("UserOperations","deleteUser","Failure",s"Failed delete $username: $ex")

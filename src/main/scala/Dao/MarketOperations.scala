@@ -19,6 +19,7 @@ import system.dispatcher
 import scala.language.postfixOps
 import scala.concurrent.Await
 import scala.concurrent.duration._
+import scala.util.control.Exception.allCatch
 import scala.util.{Failure, Success}
 
 
@@ -29,6 +30,25 @@ object  MarketOperations extends MongoDBOperations {
 	private val allMR = db
 		.getCollection("MovementRecord", classOf[MovementRecord])
 		.withCodecRegistry(codecRegistryStalks)
+
+
+	def safeVector(value : () => Vector[MovementRecord], methodName : String) :  Any = {
+		allCatch.opt(value()) match {
+			case Some(users) => users
+			case None =>
+				log.warn("UserOperations", methodName, "Failure")
+				"empty"
+		}
+	}
+
+	def safeVectorHead(value : () => Vector[MovementRecord], methodName : String) : Any = {
+		allCatch.opt(value().head) match {
+			case Some(user) => user
+			case None =>
+				log.warn("UserOperations", methodName, "Failure")
+				"empty"
+		}
+	}
 
 	def createMovementRecord(mr : MovementRecord): Unit = {
 		val mrList : List[MovementRecord] = List(mr)
@@ -77,31 +97,50 @@ object  MarketOperations extends MongoDBOperations {
 		log.info("MarketOperations","updateMovementRecord","Success",s"Updated ${mr.id}'s MovementRecord")
 	}
 
-	def readEarliestMovementRecord(): MovementRecord = readMovementRecord().head
+	def readEarliestMovementRecord(): Any = {
+		readMovementRecord() match {
+			case "empty" => "empty"
+			case mr: Vector[MovementRecord] => mr.head
+		}
+	}
 
-	def readLatestMovementRecord(): MovementRecord = readMovementRecord().reverse.head
-	def readLastNDaysMovementRecords(n : Int): Seq[MovementRecord] = readMovementRecord().reverse.take(n)
+	def readLatestMovementRecord(): Any = {
+		readMovementRecord() match {
+			case "empty" => "empty"
+			case mr: Vector[MovementRecord] => mr.reverse.head
+		}
+	}
 
-
-	def readMovementRecord(): Seq[MovementRecord] = {
-		val source = MongoSource(allMR.find(classOf[MovementRecord]))
-		val mrSeqFuture = source.runWith(Sink.seq)
-		val mrSeq : Seq[MovementRecord] = Await.result(mrSeqFuture, chill seconds)
-		if(mrSeq.isEmpty){
-			Seq(MovementRecord())
-		}else{
-			mrSeq
+	def readLastNDaysMovementRecords(n : Int): Any = {
+		readMovementRecord() match {
+			case "empty" => "empty"
+			case mr: Vector[MovementRecord] => mr.reverse.take(n)
 		}
 	}
 
 
+	def readMovementRecord(): Any = {
+		val source = MongoSource(allMR.find(classOf[MovementRecord]))
+		val mrSeqFuture = source.runWith(Sink.seq)
+		lazy val result = Await.result(mrSeqFuture, chill seconds).toVector
+		safeVector(() => result ,"readMovementRecord")
+	}
+
+
 	def deleteOldestMovementRecords(month : Int) :  Unit = {
-		val mrList  = readMovementRecord().toList
+		val mrList = readMovementRecord() match {
+			case "empty" => List()
+			case mr: Vector[MovementRecord] => mr.toList
+		}
 		val source = Source(mrList).map(_ => Filters.eq("month", month))
 		val taskFuture = source.runWith(MongoSink.deleteMany(allMR))
 		taskFuture.onComplete{
 			case Success(_) => {
-				val deletedMR = mrList.length - readMovementRecord().length
+				val updatedMrList = readMovementRecord() match {
+					case "empty" => List()
+					case mr: Vector[MovementRecord] => mr.toList
+				}
+				val deletedMR = mrList.length - updatedMrList.length
 				log.info("MarketOperations","deleteOldestMovementRecords","Success",s" Deleted $deletedMR MovementRecord(s)")
 			}
 			case Failure (ex) => log.warn("MarketOperations","deleteOldestMovementRecords","Failure",s"Failed to delete MovementRecord(s): $ex")

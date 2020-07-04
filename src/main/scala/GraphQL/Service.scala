@@ -24,7 +24,7 @@ object Service {
     	//Queries
 		def getUser(username : String):                     IO[NotFound, User]
 		def getDoesUserExist(username : String):            UIO[Boolean]
-		def getUsersWithCBAdded(dummy: Boolean):            UIO[List[User]]
+		def getUsersWithCBAdded(dummy: Boolean):            UIO[Vector[User]]
 		def validatePendingTransaction(
 			username : String,
 			business : String,
@@ -33,16 +33,16 @@ object Service {
 
 		//--MovementRecord--
 		//Queries
-		def getDayRecords(dummy : Boolean):                 UIO[MovementRecord]
-		def getNDayRecords(days: Int):                      UIO[List[MovementRecord]]
-		def getTurnipPrices(dummy : Boolean):               UIO[Int]
+		def getDayRecords(dummy : Boolean):                 IO[NotFound, MovementRecord]
+		def getNDayRecords(days: Int):                      IO[NotFound, Vector[MovementRecord]]
+		def getTurnipPrices(dummy : Boolean):               IO[NotFound, Int]
 
 
 		//--Bug--
     	//Queries
 		def getAllBugs:                                     UIO[Vector[Bug]]
-		def getAllBugsByMonth(months : List[String]):       IO[NotFound, List[Bug]]
-		def getAllRareBugsByMonth(months : List[String]):   IO[NotFound, List[Bug]]
+		def getAllBugsByMonth(months : List[String]):       IO[NotFound, Vector[Bug]]
+		def getAllRareBugsByMonth(months : List[String]):   IO[NotFound, Vector[Bug]]
 		def getBugById(id : Int):                           IO[NotFound, Bug]
 		def getBugByName(name : String):                    IO[NotFound, Bug]
 		def getBugByRandom(dummy : Boolean):                IO[NotFound, Bug]
@@ -50,8 +50,8 @@ object Service {
 		//--Fish--
 		//Queries
 		def getAllFishes:                                   UIO[Vector[Fish]]
-		def getAllFishesByMonth(months : List[String]):     IO[NotFound, List[Fish]]
-		def getAllRareFishesByMonth(months : List[String]): IO[NotFound, List[Fish]]
+		def getAllFishesByMonth(months : List[String]):     IO[NotFound, Vector[Fish]]
+		def getAllRareFishesByMonth(months : List[String]): IO[NotFound, Vector[Fish]]
 		def getFishById(id : Int):                          IO[NotFound, Fish]
 		def getFishByName(name : String):                   IO[NotFound, Fish]
 		def getFishByRandom(dummy : Boolean):               IO[NotFound, Fish]
@@ -140,8 +140,8 @@ object Service {
 			IO.succeed(doesExist)
 		}
 
-		def getUsersWithCBAdded(dummy : Boolean): UIO[List[User]] = {
-			val userList = Await.result((userActor ? UserActor.Read_All_Stream_Added_Users).mapTo[List[User]], chill seconds)
+		def getUsersWithCBAdded(dummy : Boolean): UIO[Vector[User]] = {
+			val userList = Await.result((userActor ? UserActor.Read_All_Stream_Added_Users).mapTo[Vector[User]], chill seconds)
 			IO.succeed(userList)
 		}
 
@@ -151,19 +151,26 @@ object Service {
 		}
 		//--MovementRecord--
 
-		def getDayRecords(dummy : Boolean): UIO[MovementRecord] = {
+		def getDayRecords(dummy : Boolean): IO[NotFound, MovementRecord] = {
 			val movementRecord = Await.result((marketActor ? MarketActor.Read_Latest_Movement_Record_Day).mapTo[MovementRecord], chill seconds)
-			IO.succeed(movementRecord)
+			if (movementRecord.year != 0) IO.succeed(movementRecord)
+			else IO.fail(NotFound(""))
+
 		}
 
-		def getNDayRecords(days : Int): UIO[List[MovementRecord]] = {
-			val nMovementRecords = Await.result((marketActor ? MarketActor.Read_Latest_N_Days_Movement_Record(days)).mapTo[Seq[MovementRecord]], chill seconds).toList
-			IO.succeed(nMovementRecords)
+		def getNDayRecords(days : Int): IO[NotFound, Vector[MovementRecord]] = {
+			val nMovementRecords = Await.result((marketActor ? MarketActor.Read_Latest_N_Days_Movement_Record(days)).mapTo[Vector[MovementRecord]], chill seconds)
+			if(nMovementRecords.nonEmpty) IO.succeed(nMovementRecords)
+			else IO.fail(NotFound(""))
+
 		}
 
-		def getTurnipPrices(dummy : Boolean): UIO[Int] = {
+		def getTurnipPrices(dummy : Boolean): IO[NotFound, Int] = {
 			val turnips = Await.result((marketActor ? MarketActor.Request_Turnip_Price).mapTo[Int], chill seconds)
-			IO.succeed(turnips)
+			if (turnips != 0) IO.succeed(turnips)
+			else IO.fail(NotFound(""))
+
+
 		}
 
 		//--Bug--
@@ -171,13 +178,13 @@ object Service {
 			IO.succeed(Await.result((bugActor ? BugActor.Read_Bug_All).mapTo[Vector[Bug]], chill seconds))
 		}
 
-		def getAllBugsByMonth(months : List[String]) : IO[NotFound, List[Bug]] = {
-			val allBugs = Await.result((bugActor ? BugActor.Read_All_Bug_By_Month(months)).mapTo[List[Bug]], chill seconds)
+		def getAllBugsByMonth(months : List[String]) : IO[NotFound, Vector[Bug]] = {
+			val allBugs = Await.result((bugActor ? BugActor.Read_All_Bug_By_Month(months)).mapTo[Vector[Bug]], chill seconds)
 			if(allBugs.nonEmpty) IO.succeed(allBugs)
 			else IO.fail(NotFound(""))
 		}
-		def getAllRareBugsByMonth(months : List[String]) : IO[NotFound, List[Bug]] = {
-			val allBugs = Await.result((bugActor ? BugActor.Read_All_Rarest_Bug_By_Month(months)).mapTo[List[Bug]], chill seconds)
+		def getAllRareBugsByMonth(months : List[String]) : IO[NotFound, Vector[Bug]] = {
+			val allBugs = Await.result((bugActor ? BugActor.Read_All_Rarest_Bug_By_Month(months)).mapTo[Vector[Bug]], chill seconds)
 			if(allBugs.nonEmpty) IO.succeed(allBugs)
 			else IO.fail(NotFound(""))
 		}
@@ -203,13 +210,13 @@ object Service {
 			val allFishes = Await.result((fishActor ? FishActor.Read_Fish_All).mapTo[Vector[Fish]], chill seconds)
 			IO.succeed(allFishes)
 		}
-		def getAllFishesByMonth(months : List[String]) : IO[NotFound, List[Fish]] = {
-			val allFishes = Await.result((fishActor ? FishActor.Read_All_Fish_By_Month(months)).mapTo[List[Fish]], chill seconds)
+		def getAllFishesByMonth(months : List[String]) : IO[NotFound, Vector[Fish]] = {
+			val allFishes = Await.result((fishActor ? FishActor.Read_All_Fish_By_Month(months)).mapTo[Vector[Fish]], chill seconds)
 			if(allFishes.nonEmpty) IO.succeed(allFishes)
 			else IO.fail(NotFound(""))
 		}
-		def getAllRareFishesByMonth(months : List[String]) : IO[NotFound, List[Fish]] = {
-			val allFishes = Await.result((fishActor ? FishActor.Read_All_Rarest_Fish_By_Month(months)).mapTo[List[Fish]], chill seconds)
+		def getAllRareFishesByMonth(months : List[String]) : IO[NotFound, Vector[Fish]] = {
+			val allFishes = Await.result((fishActor ? FishActor.Read_All_Rarest_Fish_By_Month(months)).mapTo[Vector[Fish]], chill seconds)
 			if(allFishes.nonEmpty) IO.succeed(allFishes)
 			else IO.fail(NotFound(""))
 		}

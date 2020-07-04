@@ -17,27 +17,27 @@ object Queries {
 		//User
 		getUser:                        usernameArgs => IO[NotFound, User],
 		getDoesUserExist:               usernameArgs => UIO[Boolean],
-		getUsersWithCBAdded:            dummyArgs => UIO[List[User]],
+		getUsersWithCBAdded:            dummyArgs => UIO[Vector[User]],
 
 	    //TurnipTransaction
 		validatePendingTransaction:     pendingTransactionArgs => UIO[TurnipTransaction],
 
 	    //MovementRecord
-		getDayRecords:                  dummyArgs => UIO[MovementRecord],
-		getNDayRecords:                 daysArgs => UIO[List[MovementRecord]],
-		getTurnipPrices:                dummyArgs => UIO[Int],
+		getDayRecords:                  dummyArgs => IO[NotFound, MovementRecord],
+		getNDayRecords:                 daysArgs => IO[NotFound, Vector[MovementRecord]],
+		getTurnipPrices:                dummyArgs => IO[NotFound, Int],
 
 		//Bug
 		getAllBugs:                     UIO[Vector[Bug]],
-		getAllBugsByMonth:              bugMonthsArgs => IO[NotFound, List[Bug]],
-		getAllRareBugsByMonth:          bugMonthsArgs => IO[NotFound, List[Bug]],
+		getAllBugsByMonth:              bugMonthsArgs => IO[NotFound, Vector[Bug]],
+		getAllRareBugsByMonth:          bugMonthsArgs => IO[NotFound, Vector[Bug]],
 		getBugById:                     bugIdArgs => IO[NotFound, Bug],
 		getBugByName:                   bugNameArgs => IO[NotFound, Bug],
 		getBugByRandom:                 dummyArgs => IO[NotFound, Bug],
 		//Fish
 		getAllFishes:                   UIO[Vector[Fish]],
-		getAllFishesByMonth:            fishMonthsArgs => IO[NotFound, List[Fish]],
-		getAllRareFishesByMonth:        fishMonthsArgs => IO[NotFound, List[Fish]],
+		getAllFishesByMonth:            fishMonthsArgs => IO[NotFound, Vector[Fish]],
+		getAllRareFishesByMonth:        fishMonthsArgs => IO[NotFound, Vector[Fish]],
 		getFishById:                    fishIdArgs => IO[NotFound, Fish],
 		getFishByName:                  fishNameArgs => IO[NotFound, Fish],
 		getFishByRandom:                dummyArgs => IO[NotFound, Fish],
