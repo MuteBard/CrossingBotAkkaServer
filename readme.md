@@ -1,5 +1,7 @@
 # Crossing Bot Akka Server (CBAS)
 
+[Link to CrossingBot website](https://www.crossingbot.com/)
+
 ![](https://cdn.discordapp.com/attachments/685583064885100568/719665723986804793/crossingbotv1.png)
 
 ## Akka Actors
