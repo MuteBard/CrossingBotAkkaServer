@@ -1,39 +1,32 @@
 package Actors
 
-import java.util.Calendar
-
-import Actors.UserActor.Read_All_Stalks_Purchased
 import Actors.Initializer._
 import Auxillary.Time._
 import Dao.MarketOperations
 import Model.Day_.Day
-import Model.MovementRecord_.MovementRecord
+import Model.MarketRecord_.MarketRecord
 import Model.TurnipTime_.TurnipTime
 import akka.actor.{Actor, ActorLogging}
+import akka.pattern.ask
+import akka.util.Timeout
 
 import scala.concurrent.Await
 import scala.concurrent.duration._
 import scala.language.postfixOps
-import akka.util.Timeout
-import akka.pattern.ask
-
-
-
-import scala.language.postfixOps
 
 
 object MarketActor {
-	case class  Create_New_Movement_Record(hourBlock :Int, quarterBlock : Int)
-	case object Read_Latest_Movement_Record_Day
-	case class  Read_Latest_N_Days_Movement_Record(n : Int)
+	case class  Create_New_Market_Record(hourBlock :Int, quarterBlock : Int)
+	case object Read_Latest_Market_Record_Day
+	case class  Read_Latest_N_Days_Market_Record(n : Int)
 	case object Request_Turnip_Price
 	case class  Update_Stalks_Purchased(quantity : Int, business : String)
-	case object Delete_Earliest_Movement_Records
+	case object Delete_Earliest_Market_Records
 	case object Start_Todays_Market
 
 }
 
-class MarketActor extends Actor with ActorLogging {
+class   MarketActor extends Actor with ActorLogging {
 
 
 	import Actors.MarketActor._
@@ -48,16 +41,16 @@ class MarketActor extends Actor with ActorLogging {
 	override def receive: Receive = {
 
 		//AUTOMATED
-		case Create_New_Movement_Record(newHourBlockId, newQuarterBlockId) =>
+		case Create_New_Market_Record(newHourBlockId, newQuarterBlockId) =>
 
-			//log.info(s"[Create_New_Movement_Record] Checking for difference in block ids ($newHourBlockId,$newQuarterBlockId)")
+			//log.info(s"[Create_New_Market_Record] Checking for difference in block ids ($newHourBlockId,$newQuarterBlockId)")
 
-			MarketOperations.readLastNDaysMovementRecords(3) match {
+			MarketOperations.readLatestNMarketRecords(3) match {
 				case "empty" =>
 					todayMarket = Day().generate("good")
 					currentHourBlockId = newHourBlockId
 					currentQuarterBlockId = newQuarterBlockId
-					val mr = MovementRecord()
+					val mr = MarketRecord()
 					val id = mr.id
 					val orderNum = mr.orderNum
 					val turnipPriceRaw = mr.latestTurnip.price + todayMarket.getQuarterBlock(newHourBlockId, newQuarterBlockId).change
@@ -71,70 +64,70 @@ class MarketActor extends Actor with ActorLogging {
 					val yearForMR = year
 					val monthForMR = month
 					val dayForMR = day
-					MarketOperations.createMovementRecord(MovementRecord(id, orderNum,newHourBlockId, newQuarterBlockId, high, low, stalksPurchased, newTurnip, turnipHistory, latestHourBlockName, yearForMR, monthForMR, dayForMR))
-				case movementRecords : List[MovementRecord] =>
-					val latestMovementRecord =
-						if(movementRecords(0).id != todayDateId()) { //carry over remnants of the last record if the previous day into the next day
-							MovementRecord(
+					MarketOperations.createMarketRecord(MarketRecord(id, orderNum,newHourBlockId, newQuarterBlockId, high, low, stalksPurchased, newTurnip, turnipHistory, latestHourBlockName, yearForMR, monthForMR, dayForMR))
+				case marketRecords : List[MarketRecord] =>
+					val latestMarketRecord =
+						if(marketRecords(0).id != todayDateId()) { //carry over remnants of the last record if the previous day into the next day
+							MarketRecord(
 								id = todayDateId(),
-								orderNum = movementRecords(0).orderNum + 1,
-								latestTurnip = movementRecords(0).latestTurnip,
-								todayHigh = movementRecords(0).latestTurnip.price,
-								todayLow = movementRecords(0).latestTurnip.price,
-								stalksPurchased = movementRecords(0).stalksPurchased,
-								turnipHistory = List(movementRecords(0).turnipHistory.head)
+								orderNum = marketRecords(0).orderNum + 1,
+								latestTurnip = marketRecords(0).latestTurnip,
+								todayHigh = marketRecords(0).latestTurnip.price,
+								todayLow = marketRecords(0).latestTurnip.price,
+								stalksPurchased = marketRecords(0).stalksPurchased,
+								turnipHistory = List(marketRecords(0).turnipHistory.head)
 							)
 
 						}else{ //otherwise just pass along the data for every 15 minutes
-							movementRecords(0)
+							marketRecords(0)
 						}
 
 					if ((currentQuarterBlockId != newQuarterBlockId) || (currentHourBlockId == -1 && currentQuarterBlockId == -1)){
 						//determine whether todayMarket should generate a good or bad day based on user turnip purchases
 						todayMarket = if (dateMarketCreated != todayDateId()) {
 							dateMarketCreated = todayDateId()
-							log.info(s"[Create_New_Movement_Record] A new day has been detected ($newHourBlockId,$newQuarterBlockId)")
-							log.info(s"[Create_New_Movement_Record] Generating all block patterns for the day")
+							log.info(s"[Create_New_Market_Record] A new day has been detected ($newHourBlockId,$newQuarterBlockId)")
+							log.info(s"[Create_New_Market_Record] Generating all block patterns for the day")
 
-							if(movementRecords(0).orderNum >= 2) {
-								val yesterdayMarket = movementRecords(1)
-								val dayBeforeMarket = movementRecords(2)
+							if(marketRecords(0).orderNum >= 2) {
+								val yesterdayMarket = marketRecords(1)
+								val dayBeforeMarket = marketRecords(2)
 								val margin = yesterdayMarket.stalksPurchased * .25
 								// if the market grew more than 25% of its size yesterday, then it is a good day otherwise a bad day
 								if (yesterdayMarket.stalksPurchased - dayBeforeMarket.stalksPurchased > margin) {
-									log.info(s"[Create_New_Movement_Record] Generating relatively good day")
+									log.info(s"[Create_New_Market_Record] Generating relatively good day")
 									Day().generate("good")
 								} else {
-									log.info(s"[Create_New_Movement_Record] Generating relatively bad day")
+									log.info(s"[Create_New_Market_Record] Generating relatively bad day")
 									Day().generate("bad")
 								}
 							}else{
-								log.info(s"[Create_New_Movement_Record] Generating relatively good day")
+								log.info(s"[Create_New_Market_Record] Generating relatively good day")
 								Day().generate("good")
 							}
 						} else todayMarket
 
 						val id = todayDateId()
-						val newOrderNum = latestMovementRecord.orderNum
-						val turnipPriceRaw = latestMovementRecord.latestTurnip.price + todayMarket.getQuarterBlock(newHourBlockId, newQuarterBlockId).change
+						val newOrderNum = latestMarketRecord.orderNum
+						val turnipPriceRaw = latestMarketRecord.latestTurnip.price + todayMarket.getQuarterBlock(newHourBlockId, newQuarterBlockId).change
 						val turnipPriceResolved = if(turnipPriceRaw >= 10) turnipPriceRaw else 10
 						val newTurnip = TurnipTime(hour,minute, turnipPriceResolved)
-						val high = Math.max(newTurnip.price, latestMovementRecord.todayHigh)
-						val low = Math.min(newTurnip.price, latestMovementRecord.todayLow)
-						val turnipHistory =  newTurnip +: latestMovementRecord.turnipHistory
+						val high = Math.max(newTurnip.price, latestMarketRecord.todayHigh)
+						val low = Math.min(newTurnip.price, latestMarketRecord.todayLow)
+						val turnipHistory =  newTurnip +: latestMarketRecord.turnipHistory
 						val stalksPurchased = Await.result((userActor ? UserActor.Read_All_Stalks_Purchased).mapTo[Int], chill seconds)
 						val latestHourBlockName = todayMarket.getHourBlock(newHourBlockId).name
 						val yearForMR = year
 						val monthForMR = month
 						val dayForMR = day
-						val newMr = MovementRecord(id, newOrderNum,newHourBlockId, newQuarterBlockId, high, low, stalksPurchased, newTurnip, turnipHistory, latestHourBlockName, yearForMR, monthForMR, dayForMR)
+						val newMr = MarketRecord(id, newOrderNum,newHourBlockId, newQuarterBlockId, high, low, stalksPurchased, newTurnip, turnipHistory, latestHourBlockName, yearForMR, monthForMR, dayForMR)
 
 						if ((newHourBlockId == 0 && newQuarterBlockId == 0) || newMr.id != todayDateId()) {
-							log.info(s"[Create_New_Movement_Record] Creating new Movement Record ($newHourBlockId,$newQuarterBlockId)")
-							MarketOperations.createMovementRecord(newMr)
+							log.info(s"[Create_New_Market_Record] Creating new Market Record ($newHourBlockId,$newQuarterBlockId)")
+							MarketOperations.createMarketRecord(newMr)
 						} else {
-							log.info(s"[Create_New_Movement_Record] Updating Movement Record")
-							MarketOperations.massUpdateMovementRecord(newMr)
+							log.info(s"[Create_New_Market_Record] Updating Market Record")
+							MarketOperations.massUpdateMarketRecord(newMr)
 						}
 
 						currentHourBlockId = newHourBlockId
@@ -145,35 +138,35 @@ class MarketActor extends Actor with ActorLogging {
 
 
 		//AUTOMATED
-		case Delete_Earliest_Movement_Records =>
-			log.info(s"[Delete_Earliest_Movement_Records] Getting earliest Movement Record")
+		case Delete_Earliest_Market_Records =>
+			log.info(s"[Delete_Earliest_Market_Records] Getting earliest Market Record")
 			val currentMonth = month
-			MarketOperations.readEarliestMovementRecord() match {
-				case "empty" => log.info(s"[Delete_Earliest_Movement_Records] Nothing to Delete")
-				case mr : MovementRecord =>
+			MarketOperations.readEarliestMarketRecord match {
+				case "empty" => log.info(s"[Delete_Earliest_Market_Records] Nothing to Delete")
+				case mr : MarketRecord =>
 					if (currentMonth - mr.month > 2) {
-						log.info(s"[Delete_Earliest_Movement_Records] Deleting old Movement Records")
-						MarketOperations.deleteOldestMovementRecords(mr.month)
+						log.info(s"[Delete_Earliest_Market_Records] Deleting old Market Records")
+						MarketOperations.deleteOldestMarketRecords(mr.month)
 					}
 			}
 
 
-		case Read_Latest_Movement_Record_Day =>
-			log.info(s"[Read_Latest_Movement_Record_Day] Getting latest Movement Record")
-			MarketOperations.readLatestMovementRecord() match {
+		case Read_Latest_Market_Record_Day =>
+			log.info(s"[Read_Latest_Market_Record_Day] Getting latest Market Record")
+			MarketOperations.readLatestMarketRecord match {
 				case "empty" =>
-					log.info(s"[Read_Latest_Movement_Record_Day] Nothing to retrieve")
-					sender() ! MovementRecord()
-				case mr : MovementRecord =>
+					log.info(s"[Read_Latest_Market_Record_Day] Nothing to retrieve")
+					sender() ! MarketRecord()
+				case mr : MarketRecord =>
 					sender() ! mr
 			}
 
-		case Read_Latest_N_Days_Movement_Record(n : Int) =>
-			log.info(s"[Read_Latest_N_Days_Movement_Record_Day] Getting latest Movement Record")
-			MarketOperations.readLastNDaysMovementRecords(n) match {
+		case Read_Latest_N_Days_Market_Record(n : Int) =>
+			log.info(s"[Read_Latest_N_Days_Market_Record_Day] Getting latest Market Record")
+			MarketOperations.readLatestNMarketRecords(n) match {
 				case "empty" =>
 					sender() ! List()
-				case movementRecords : List[MovementRecord] =>
+				case movementRecords : List[MarketRecord] =>
 					sender() ! movementRecords
 			}
 
@@ -188,10 +181,10 @@ class MarketActor extends Actor with ActorLogging {
 
 		case Request_Turnip_Price =>
 			log.info(s"[Request_Turnip_Price] Getting turnip price")
-			MarketOperations.readLatestMovementRecord() match {
+			MarketOperations.readLatestMarketRecord() match {
 				case "empty" =>
 					sender() ! 0
-				case mr : MovementRecord =>
+				case mr : MarketRecord =>
 					sender() ! mr.latestTurnip.price
 			}
 

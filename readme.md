@@ -38,7 +38,7 @@ Users are created at the first instance they use !bug or !fish commands. UserAct
 
 ### The Market Actor
 
-Also manages a series of Create, Read, Update and genuine Delete operations regarding the mongoDB MovementRecord collection.
+Also manages a series of Create, Read, Update and genuine Delete operations regarding the mongoDB MarketRecord collection.
 This actor calls a method that generates weighted random "stalk" (stock) values for the 24 hours. Each 24 hour interval contains what call an "HourBlock". An hourblock contains four of what is called a "QuarterBlock"
 
 QuarterBlocks can have one of 7 states:
@@ -73,9 +73,9 @@ good hourblocks consist of a random assortment of 4 quarterblocks that can be ei
 bad hourblocks consist of a random assortment of 4 quarterblocks that can be either awful, bad or neutral
 risky hourblocks consist of a terrifying random assortment of 4 quarterblocks that can be either heavenly or hellish
 
-A marketDay consists of 24 hourblocks and 96 quarterblocks. Under a timer, the marketActor pulls a quarterblock at every quarter hour (:00, :15, :30 and :45) and stores a quarterblock within the MovementRecord. A MovementRecord contains info of the Hourblock and Quarterblock the market is currently executing, the min and max of turnips price of the day, the number of users who currenly have turnips in the stalkmarket as will as a history list of quarterblocks of that day at each 15 minute interval
+A marketDay consists of 24 hourblocks and 96 quarterblocks. Under a timer, the marketActor pulls a quarterblock at every quarter hour (:00, :15, :30 and :45) and stores a quarterblock within the MarketRecord. A MarketRecord contains info of the Hourblock and Quarterblock the market is currently executing, the min and max of turnips price of the day, the number of users who currenly have turnips in the stalkmarket as will as a history list of quarterblocks of that day at each 15 minute interval
 
-When a midnight passes, a new MovementRecord is created and added to the collection for that day and the pocess starts again. The Market Actor in short, manages this collection.
+When a midnight passes, a new MarketRecord is created and added to the collection for that day and the pocess starts again. The Market Actor in short, manages this collection.
 
 ## DAO
 

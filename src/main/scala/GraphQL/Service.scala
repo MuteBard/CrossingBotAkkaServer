@@ -4,7 +4,7 @@ import Model.User_._
 import Model.Bug_._
 import Model.Fish_._
 import Actors.Initializer._
-import Model.MovementRecord_.MovementRecord
+import Model.MarketRecord_.MarketRecord
 import Model.TurnipTransaction_.TurnipTransaction
 import zio.{IO, UIO}
 
@@ -31,10 +31,10 @@ object Service {
 			quantity : Int
 		):                                                  UIO[TurnipTransaction]
 
-		//--MovementRecord--
+		//--MarketRecord--
 		//Queries
-		def getDayRecords(dummy : Boolean):                 IO[NotFound, MovementRecord]
-		def getNDayRecords(days: Int):                      IO[NotFound, List[MovementRecord]]
+		def getDayRecords(dummy : Boolean):                 IO[NotFound, MarketRecord]
+		def getNDayRecords(days: Int):                      IO[NotFound, List[MarketRecord]]
 		def getTurnipPrices(dummy : Boolean):               IO[NotFound, Int]
 
 
@@ -149,18 +149,18 @@ object Service {
 			val turnipTransaction = Await.result((userActor ? UserActor.Read_One_User_With_Pending_Turnip_Transaction(username, business, quantity)).mapTo[TurnipTransaction], chill seconds)
 			IO.succeed(turnipTransaction)
 		}
-		//--MovementRecord--
+		//--MarketRecord--
 
-		def getDayRecords(dummy : Boolean): IO[NotFound, MovementRecord] = {
-			val movementRecord = Await.result((marketActor ? MarketActor.Read_Latest_Movement_Record_Day).mapTo[MovementRecord], chill seconds)
+		def getDayRecords(dummy : Boolean): IO[NotFound, MarketRecord] = {
+			val movementRecord = Await.result((marketActor ? MarketActor.Read_Latest_Market_Record_Day).mapTo[MarketRecord], chill seconds)
 			if (movementRecord.year != 0) IO.succeed(movementRecord)
 			else IO.fail(NotFound(""))
 
 		}
 
-		def getNDayRecords(days : Int): IO[NotFound, List[MovementRecord]] = {
-			val nMovementRecords = Await.result((marketActor ? MarketActor.Read_Latest_N_Days_Movement_Record(days)).mapTo[List[MovementRecord]], chill seconds)
-			if(nMovementRecords.nonEmpty) IO.succeed(nMovementRecords)
+		def getNDayRecords(days : Int): IO[NotFound, List[MarketRecord]] = {
+			val nMarketRecords = Await.result((marketActor ? MarketActor.Read_Latest_N_Days_Market_Record(days)).mapTo[List[MarketRecord]], chill seconds)
+			if(nMarketRecords.nonEmpty) IO.succeed(nMarketRecords)
 			else IO.fail(NotFound(""))
 
 		}

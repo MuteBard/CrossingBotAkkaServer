@@ -23,6 +23,26 @@ object Time {
 		s"$year$month$day"
 	}
 
+
+	def yesterdayDateId(): String = {
+		val dt = Calendar.getInstance()
+		dt.add(Calendar.DATE, -1)
+		val month = if (dt.get(Calendar.MONTH) < 10) "0"+(dt.get(Calendar.MONTH)+1) else dt.get(Calendar.MONTH)+1
+		val day = if (dt.get(Calendar.DAY_OF_MONTH) < 10) "0"+dt.get(Calendar.DAY_OF_MONTH) else dt.get(Calendar.DAY_OF_MONTH)
+		val year = dt.get(Calendar.YEAR)
+		s"$year$month$day"
+	}
+
+
+	def dayBeforeDateId(): String = {
+		val dt = Calendar.getInstance()
+		dt.add(Calendar.DATE, -2)
+		val month = if (dt.get(Calendar.MONTH) < 10) "0"+(dt.get(Calendar.MONTH)+1) else dt.get(Calendar.MONTH)+1
+		val day = if (dt.get(Calendar.DAY_OF_MONTH) < 10) "0"+dt.get(Calendar.DAY_OF_MONTH) else dt.get(Calendar.DAY_OF_MONTH)
+		val year = dt.get(Calendar.YEAR)
+		s"$year$month$day"
+	}
+
 	def year: Int = {
 		val dt = Calendar.getInstance()
 		dt.get(Calendar.YEAR)

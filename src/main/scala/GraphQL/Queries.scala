@@ -1,7 +1,7 @@
 package GraphQL
 import Model.Bug_._
 import Model.Fish_._
-import Model.MovementRecord_._
+import Model.MarketRecord_._
 import Model.TurnipTransaction_._
 import Model.User_._
 import Service._
@@ -14,36 +14,36 @@ object Queries {
 	case class dummyArgs(dummy : Boolean)
 
 	case class Queries(
-		//User
-		getUser:                        usernameArgs => IO[NotFound, User],
-		getDoesUserExist:               usernameArgs => UIO[Boolean],
-		getUsersWithCBAdded:            dummyArgs => UIO[List[User]],
+		                  //User
+		                  getUser:                        usernameArgs => IO[NotFound, User],
+		                  getDoesUserExist:               usernameArgs => UIO[Boolean],
+		                  getUsersWithCBAdded:            dummyArgs => UIO[List[User]],
 
-	    //TurnipTransaction
-		validatePendingTransaction:     pendingTransactionArgs => UIO[TurnipTransaction],
+		                  //TurnipTransaction
+		                  validatePendingTransaction:     pendingTransactionArgs => UIO[TurnipTransaction],
 
-	    //MovementRecord
-		getDayRecords:                  dummyArgs => IO[NotFound, MovementRecord],
-		getNDayRecords:                 daysArgs => IO[NotFound, List[MovementRecord]],
-		getTurnipPrices:                dummyArgs => IO[NotFound, Int],
+		                  //MarketRecord
+		                  getDayRecords:                  dummyArgs => IO[NotFound, MarketRecord],
+		                  getNDayRecords:                 daysArgs => IO[NotFound, List[MarketRecord]],
+		                  getTurnipPrices:                dummyArgs => IO[NotFound, Int],
 
-		//Bug
-		getAllBugs:                     UIO[List[Bug]],
-		getAllBugsByMonth:              bugMonthsArgs => IO[NotFound, List[Bug]],
-		getAllRareBugsByMonth:          bugMonthsArgs => IO[NotFound, List[Bug]],
-		getBugById:                     bugIdArgs => IO[NotFound, Bug],
-		getBugByName:                   bugNameArgs => IO[NotFound, Bug],
-		getBugByRandom:                 dummyArgs => IO[NotFound, Bug],
-		//Fish
-		getAllFishes:                   UIO[List[Fish]],
-		getAllFishesByMonth:            fishMonthsArgs => IO[NotFound, List[Fish]],
-		getAllRareFishesByMonth:        fishMonthsArgs => IO[NotFound, List[Fish]],
-		getFishById:                    fishIdArgs => IO[NotFound, Fish],
-		getFishByName:                  fishNameArgs => IO[NotFound, Fish],
-		getFishByRandom:                dummyArgs => IO[NotFound, Fish],
+		                  //Bug
+		                  getAllBugs:                     UIO[List[Bug]],
+		                  getAllBugsByMonth:              bugMonthsArgs => IO[NotFound, List[Bug]],
+		                  getAllRareBugsByMonth:          bugMonthsArgs => IO[NotFound, List[Bug]],
+		                  getBugById:                     bugIdArgs => IO[NotFound, Bug],
+		                  getBugByName:                   bugNameArgs => IO[NotFound, Bug],
+		                  getBugByRandom:                 dummyArgs => IO[NotFound, Bug],
+		                  //Fish
+		                  getAllFishes:                   UIO[List[Fish]],
+		                  getAllFishesByMonth:            fishMonthsArgs => IO[NotFound, List[Fish]],
+		                  getAllRareFishesByMonth:        fishMonthsArgs => IO[NotFound, List[Fish]],
+		                  getFishById:                    fishIdArgs => IO[NotFound, Fish],
+		                  getFishByName:                  fishNameArgs => IO[NotFound, Fish],
+		                  getFishByRandom:                dummyArgs => IO[NotFound, Fish],
 
-		//Quality of life
-		getCreatureSummaryByName:       creatureNameArgs => IO[NotFound, String]
+		                  //Quality of life
+		                  getCreatureSummaryByName:       creatureNameArgs => IO[NotFound, String]
 		)
 		val cbs : CrossingBotService = new CBS()
 

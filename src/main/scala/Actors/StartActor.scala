@@ -20,8 +20,8 @@ object StartActor {
 class StartActor extends Actor with ActorLogging{
 	import StartActor._
 
-	var createMovementRecords : Cancellable = _
-	var deleteOldMovementRecords : Cancellable = _
+	var createMarketRecords : Cancellable = _
+	var deleteOldMarketRecords : Cancellable = _
 
 	override def receive: Receive = {
 		case Create_Creatures_All =>
@@ -40,19 +40,19 @@ class StartActor extends Actor with ActorLogging{
 				def run() {
 					val hourblock = Calendar.getInstance().get(Calendar.HOUR_OF_DAY)
 					val quarterblock = Calendar.getInstance().get(Calendar.MINUTE)/15
-					marketActor ! Create_New_Movement_Record(hourblock, quarterblock)
+					marketActor ! Create_New_Market_Record(hourblock, quarterblock)
 				}
 			}
 			sender() ! "Success"
 
-			createMovementRecords = system.scheduler.scheduleWithFixedDelay(5 seconds, 1 minute){task}
-			deleteOldMovementRecords = system.scheduler.scheduleWithFixedDelay(60 days, 10 days, marketActor, Delete_Earliest_Movement_Records)
+			createMarketRecords = system.scheduler.scheduleWithFixedDelay(5 seconds, 1 minute){task}
+			deleteOldMarketRecords = system.scheduler.scheduleWithFixedDelay(60 days, 10 days, marketActor, Delete_Earliest_Market_Records)
 
 		case Stop_Market_Timers =>
 			log.info("[StartMarketTimers] Stopping Scheduler Jobs")
 			//TODO handle null with option
-			createMovementRecords.cancel()
-			deleteOldMovementRecords.cancel()
+			createMarketRecords.cancel()
+			deleteOldMarketRecords.cancel()
 			sender() ! "Success"
 
 	}

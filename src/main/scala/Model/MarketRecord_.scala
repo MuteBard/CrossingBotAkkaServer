@@ -2,8 +2,8 @@ package Model
 import Auxillary.Time.todayDateId
 import Model.TurnipTime_.TurnipTime
 
-object MovementRecord_ {
-	case class MovementRecord(
+object MarketRecord_ {
+	case class MarketRecord(
          id: String = todayDateId(),
          orderNum : Int = 0,
          hourBlockId: Int = 0,

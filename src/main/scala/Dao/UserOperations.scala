@@ -1,36 +1,35 @@
 
 package Dao
+import Actors.Initializer.system
+import Actors.Initializer.system.dispatcher
 import Auxillary.Time.log
+import Model.Bug_._
+import Model.Fish_._
+import Model.Pocket_._
+import Model.TurnipTransaction_._
+import Model.User_._
+import akka.stream.alpakka.mongodb.DocumentUpdate
 import akka.stream.alpakka.mongodb.scaladsl.{MongoSink, MongoSource}
 import akka.stream.scaladsl.{Flow, Sink, Source}
 import org.bson.codecs.configuration.CodecRegistries.{fromProviders, fromRegistries}
+import org.bson.codecs.configuration.CodecRegistry
 import org.mongodb.scala.MongoClient.DEFAULT_CODEC_REGISTRY
 import org.mongodb.scala.bson.codecs.Macros._
-import akka.stream.alpakka.mongodb.DocumentUpdate
 import org.mongodb.scala.model.{Filters, Updates}
 
-import scala.util.{Failure, Success}
-import Actors.Initializer.system
-import Model.Bug_._
-import Model.Fish_._
-import Model.TurnipTransaction_._
-import Model.User_._
-import Model.Pocket_._
-
-import scala.language.postfixOps
+import scala.concurrent.Await
 import scala.concurrent.duration._
-import scala.concurrent.{Await, Future}
-import system.dispatcher
-
+import scala.language.postfixOps
 import scala.util.control.Exception.allCatch
+import scala.util.{Failure, Success}
 
 
 object UserOperations extends MongoDBOperations {
 	final val BUG = "bug"
 	final val FISH = "fish"
 	final val chill = 10
-	val codecRegistryUser = fromRegistries(fromProviders(classOf[User], classOf[TurnipTransaction],classOf[Pocket], classOf[Bug], classOf[Fish]), DEFAULT_CODEC_REGISTRY)
-	val codecRegistryPocket = fromRegistries(fromProviders(classOf[User],classOf[Pocket], classOf[Bug], classOf[Fish]), DEFAULT_CODEC_REGISTRY)
+	val codecRegistryUser: CodecRegistry = fromRegistries(fromProviders(classOf[User], classOf[TurnipTransaction],classOf[Pocket], classOf[Bug], classOf[Fish]), DEFAULT_CODEC_REGISTRY)
+	val codecRegistryPocket: CodecRegistry = fromRegistries(fromProviders(classOf[User],classOf[Pocket], classOf[Bug], classOf[Fish]), DEFAULT_CODEC_REGISTRY)
 
 	private val allUsers = db
 		.getCollection("user", classOf[User])
@@ -69,7 +68,7 @@ object UserOperations extends MongoDBOperations {
 	def finalizeCreateOneUser(username : String, id : Int, avatar : String): Unit = {
 		genericUpdateUser(username, "id", id)
 		genericUpdateUser(username, "avatar", avatar)
-		}
+	}
 
 	def readOneUser(username : String): Any = {
 		val source = MongoSource(allUsers.find(classOf[User])).filter(user => user.username == username)

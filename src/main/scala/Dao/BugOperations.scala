@@ -11,6 +11,7 @@ import org.mongodb.scala.bson.codecs.Macros._
 
 import scala.util.{Failure, Random, Success}
 import Actors.Initializer.system
+import org.bson.codecs.configuration.CodecRegistry
 import org.mongodb.scala.model.Filters
 
 import scala.concurrent.duration._
@@ -22,7 +23,7 @@ import scala.util.control.Exception._
 
 
 object BugOperations extends MongoDBOperations{
-	val codecRegistry = fromRegistries(fromProviders(classOf[Bug]), DEFAULT_CODEC_REGISTRY)
+	val codecRegistry: CodecRegistry = fromRegistries(fromProviders(classOf[Bug]), DEFAULT_CODEC_REGISTRY)
 	final val chill = 10
 	private val allBugs = db
 		.getCollection("bug", classOf[Bug])
