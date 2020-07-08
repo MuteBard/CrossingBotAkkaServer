@@ -62,7 +62,7 @@ class UserActor extends Actor with ActorLogging{
 			UserOperations.readOneUser(username) match {
 				case "empty" =>
 					sender() ! false
-				case User =>
+				case _ =>
 					sender() ! true
 			}
 

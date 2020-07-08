@@ -51,7 +51,6 @@ object UserOperations extends MongoDBOperations {
 				log.warn("UserOperations", methodName, "Failure")
 				"empty"
 			case Some(user) => user
-
 		}
 	}
 
