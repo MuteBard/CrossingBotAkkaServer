@@ -166,8 +166,8 @@ class   MarketActor extends Actor with ActorLogging {
 			MarketOperations.readLatestNMarketRecords(n) match {
 				case "empty" =>
 					sender() ! List()
-				case movementRecords : List[MarketRecord] =>
-					sender() ! movementRecords
+				case marketRecords : List[MarketRecord] =>
+					sender() ! marketRecords
 			}
 
 		case Update_Stalks_Purchased(quantity, business) =>
@@ -181,7 +181,7 @@ class   MarketActor extends Actor with ActorLogging {
 
 		case Request_Turnip_Price =>
 			log.info(s"[Request_Turnip_Price] Getting turnip price")
-			MarketOperations.readLatestMarketRecord() match {
+			MarketOperations.readLatestMarketRecord match {
 				case "empty" =>
 					sender() ! 0
 				case mr : MarketRecord =>

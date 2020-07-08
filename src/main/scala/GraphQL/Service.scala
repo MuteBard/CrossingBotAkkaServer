@@ -152,8 +152,8 @@ object Service {
 		//--MarketRecord--
 
 		def getDayRecords(dummy : Boolean): IO[NotFound, MarketRecord] = {
-			val movementRecord = Await.result((marketActor ? MarketActor.Read_Latest_Market_Record_Day).mapTo[MarketRecord], chill seconds)
-			if (movementRecord.year != 0) IO.succeed(movementRecord)
+			val marketRecord = Await.result((marketActor ? MarketActor.Read_Latest_Market_Record_Day).mapTo[MarketRecord], chill seconds)
+			if (marketRecord.year != 0) IO.succeed(marketRecord)
 			else IO.fail(NotFound(""))
 
 		}
